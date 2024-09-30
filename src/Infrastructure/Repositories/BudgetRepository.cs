@@ -69,7 +69,7 @@ public async Task<List<BudgetWithExpenses>> GetBudgetsAsync(Guid userId)
             e.Id AS ExpenseId,
             e.Amount,
             e.Description,
-            e.Category,
+            e.CategoryId,
             e.Date,
             e.CreatedAt
         FROM Budgets b
