@@ -1,5 +1,3 @@
-using System;
-
 namespace ExpenseTrackerGrupo4.src.Presentation.DTOs;
 
 public class CreateUpdateExpenseDto

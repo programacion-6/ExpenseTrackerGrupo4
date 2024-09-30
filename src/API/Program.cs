@@ -16,6 +16,7 @@ using Hangfire.PostgreSql;
 using FluentValidation.AspNetCore;
 using FluentValidation;
 using ExpenseTrackerGrupo4.src.Validators;
+using ExpenseTrackerGrupo4.src.Validators.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +31,24 @@ builder.Services.AddHangfireServer();
 builder.Services.AddJwtAuthentication();
 builder.Services.AddSwaggerWithJwt();
 builder.Services.AddControllers();
+
+builder.Services.AddFluentValidationAutoValidation(); 
+builder.Services.AddValidatorsFromAssemblyContaining<BudgetValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<BudgetWithExpensesValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<ExpenseValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<GoalValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<GoalWithDetailsValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<IncomeValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UserValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateUpdateBudgetDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateUpdateExpenseDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateUpdateGoalDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<GoalWithDetailsDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<PasswordResetConfirmDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<PasswordResetRequestDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestDTOValidator>();
+
 builder.Services.AddScoped<CommandInvoker>();
 builder.Services.AddScoped<ITokenValidatorService, TokenValidatorService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -40,7 +59,7 @@ builder.Services.AddScoped<IBudgetService, BudgetService>();
 builder.Services.AddScoped<IBudgetRepository, BudgetRepository>();
 builder.Services.AddScoped<IGoalService, GoalService>();
 builder.Services.AddScoped<IGoalRepository, GoalRepository>();
-
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IIncomeRepository, IncomeRepository>();
 builder.Services.AddScoped<IIncomeService, IncomeService>();
 builder.Services.AddScoped<IBudgetNotificationLogRepository, BudgetNotificationLogRepository>();
@@ -54,15 +73,6 @@ builder.Services.AddTransient<IDbConnection>(sp =>
     new NpgsqlConnection("Host=localhost;Port=5432;Database=mydatabase;Username=root;Password=group4321"));
     
 builder.Services.AddScoped<BaseContext>();
-
-builder.Services.AddFluentValidationAutoValidation(); 
-builder.Services.AddValidatorsFromAssemblyContaining<BudgetValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<BudgetWithExpensesValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<ExpenseValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<GoalValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<GoalWithDetailsValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<IncomeValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<UserValidator>();
 
 var app = builder.Build();
 
