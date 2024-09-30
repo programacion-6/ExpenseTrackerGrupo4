@@ -12,6 +12,10 @@ using ExpenseTrackerGrupo4.src.Aplication.Commands;
 using ExpenseTrackerGrupo4.src.Utils;
 using Hangfire;
 using Hangfire.PostgreSql;
+using FluentValidation.AspNetCore;
+using FluentValidation;
+using ExpenseTrackerGrupo4.src.Validators;
+using ExpenseTrackerGrupo4.src.Validators.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +30,25 @@ builder.Services.AddHangfireServer();
 builder.Services.AddJwtAuthentication();
 builder.Services.AddSwaggerWithJwt();
 builder.Services.AddControllers();
+
+builder.Services.AddFluentValidationAutoValidation(); 
+builder.Services.AddValidatorsFromAssemblyContaining<BudgetValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<BudgetWithExpensesValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<ExpenseValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<GoalValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<GoalWithDetailsValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<IncomeValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UserValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateUpdateBudgetDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateUpdateExpenseDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateUpdateGoalDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<GoalWithDetailsDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<PasswordResetConfirmDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<PasswordResetRequestDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<IncomeDtoValidator>();
+
 builder.Services.AddScoped<CommandInvoker>();
 builder.Services.AddScoped<ITokenValidatorService, TokenValidatorService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
