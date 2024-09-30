@@ -13,8 +13,8 @@ public class CreateUpdateExpenseDTOValidator : AbstractValidator<CreateUpdateExp
         RuleFor(e => e.Description)
             .NotEmpty().WithMessage("Description is required.");
         
-        RuleFor(e => e.Category)
-            .NotEmpty().WithMessage("Category is required.");
+        RuleFor(x => x.CategoryId)
+            .NotNull().WithMessage("Category ID is required.");
         
         RuleFor(e => e.Date)
             .LessThanOrEqualTo(DateTime.Now).WithMessage("Date cannot be in the future.");

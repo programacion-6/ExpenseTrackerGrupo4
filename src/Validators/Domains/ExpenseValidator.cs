@@ -17,11 +17,9 @@ public class ExpenseValidator : AbstractValidator<Expense>
             .MaximumLength(250)
             .WithMessage("Description cannot exceed 250 characters.");
 
-        RuleFor(e => e.Category)
-            .NotEmpty()
-            .WithMessage("Category is required.")
-            .MaximumLength(100)
-            .WithMessage("Category cannot exceed 100 characters.");
+        RuleFor(e => e.CategoryId)
+            .NotNull()
+            .WithMessage("Category ID is required.");
 
         RuleFor(e => e.Date)
             .NotEmpty()

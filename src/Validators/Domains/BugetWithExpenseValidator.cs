@@ -31,10 +31,8 @@ public class BudgetWithExpensesValidator : AbstractValidator<BudgetWithExpenses>
             .WithMessage("Description cannot exceed 250 characters.")
             .When(b => !string.IsNullOrEmpty(b.Description));
 
-        RuleFor(b => b.Category)
-            .NotEmpty()
-            .WithMessage("Category is required.")
-            .MaximumLength(100)
-            .WithMessage("Category cannot exceed 100 characters.");
+        RuleFor(b => b.CategoryId)
+            .NotNull()
+            .WithMessage("Category is required.");
     }
 }
