@@ -9,7 +9,6 @@ using ExpenseTrackerGrupo4.Configurations;
 using ExpenseTrackerGrupo4.src.Aplication.Interfaces;
 using ExpenseTrackerGrupo4.src.Aplication.Services;
 using ExpenseTrackerGrupo4.src.Aplication.Commands;
-using ExpenseTrackerGrupo4.src.Infrastructure.Services;
 using ExpenseTrackerGrupo4.src.Utils;
 using Hangfire;
 using Hangfire.PostgreSql;
@@ -48,6 +47,7 @@ builder.Services.AddScoped<IGoalNotificationLogRepository, GoalNotificationLogRe
 builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddAutoMapper(typeof(ExpenseTrackerProfile));
+builder.Services.AddAutoMapper(typeof(IncomeProfile));
 builder.Services.AddAutoMapper(typeof(UserProfile));
 
 builder.Services.AddTransient<IDbConnection>(sp => 
