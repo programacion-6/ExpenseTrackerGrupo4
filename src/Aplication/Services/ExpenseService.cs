@@ -37,10 +37,10 @@ public class ExpenseService (
     }
 
     public async Task<List<Expense>> GetUserExpensesCommand(
-        Guid userId, DateTime? startDate, DateTime? endDate, string? category
+        Guid userId, DateTime? startDate, DateTime? endDate, Guid? categoryId
     )
     {
-        var command = new GetUserExpensesCommand(_expenseRepository, userId, startDate, endDate, category);
+        var command = new GetUserExpensesCommand(_expenseRepository, userId, startDate, endDate, categoryId);
         return await CommandInvoker.Execute(command);
     }
 

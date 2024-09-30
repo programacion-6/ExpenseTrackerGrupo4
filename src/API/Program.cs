@@ -41,10 +41,11 @@ builder.Services.AddScoped<IGoalRepository, GoalRepository>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IIncomeRepository, IncomeRepository>();
 builder.Services.AddScoped<IIncomeService, IncomeService>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IBudgetNotificationLogRepository, BudgetNotificationLogRepository>();
 builder.Services.AddScoped<IGoalNotificationLogRepository, GoalNotificationLogRepository>();
 builder.Services.AddDistributedMemoryCache();
-
 
 builder.Services.AddAutoMapper(typeof(ExpenseTrackerProfile));
 builder.Services.AddAutoMapper(typeof(UserProfile));

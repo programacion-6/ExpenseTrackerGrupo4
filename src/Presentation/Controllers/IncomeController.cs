@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using ExpenseTrackerGrupo4.src.Domain.Entities;
 using ExpenseTrackerGrupo4.src.Infrastructure.Interfaces;
+using ExpenseTrackerGrupo4.src.Utils;
 
 namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
 {
@@ -26,13 +26,14 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return BadRequest("Income data is required.");
             }
 
-            var userId = GetUserId();
-            if (userId == Guid.Empty)
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+
+            if (currentUser == Guid.Empty)
             {
                 return Unauthorized("User ID is not valid or missing.");
             }
 
-            income.UserId = userId;
+            income.UserId = currentUser;
 
             await _incomeService.AddIncomeAsync(income);
             return CreatedAtAction(nameof(GetIncomeById), new { id = income.Id }, income);
@@ -41,13 +42,13 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Income>>> GetIncomes()
         {
-            var userId = GetUserId();
-            if (userId == Guid.Empty)
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+            if (currentUser == Guid.Empty)
             {
                 return Unauthorized("User ID is not valid or missing.");
             }
 
-            var incomes = await _incomeService.GetIncomesByUserIdAsync(userId);
+            var incomes = await _incomeService.GetIncomesByUserIdAsync(currentUser);
             
             if (incomes == null || !incomes.Any())
             {
@@ -56,7 +57,6 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
 
             return Ok(incomes);
         }
-
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Income>> GetIncomeById(Guid id)
@@ -67,7 +67,9 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return NotFound();
             }
 
-            if (income.UserId != GetUserId())
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+    
+            if (income.UserId != currentUser)
             {
                 return Forbid();
             }
@@ -89,7 +91,9 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return NotFound();
             }
 
-            if (existingIncome.UserId != GetUserId())
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+            
+            if (existingIncome.UserId != currentUser)
             {
                 return Forbid();
             }
@@ -107,19 +111,15 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return NotFound();
             }
 
-            if (income.UserId != GetUserId())
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+            
+            if (income.UserId != currentUser)
             {
                 return Forbid();
             }
 
             await _incomeService.DeleteIncomeAsync(id);
             return NoContent();
-        }
-
-        private Guid GetUserId()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
         }
     }
 }

@@ -10,17 +10,17 @@ public class ExpenseRepository(IDbConnection dbConnection) : IExpenseRepository
     private readonly IDbConnection _dbConnection = dbConnection;
 
     public async Task<List<Expense>> GetUserExpensesAsync(
-        Guid userId, DateTime? startDate, DateTime? endDate, string? category
+    Guid userId, DateTime? startDate, DateTime? endDate, Guid? categoryId
     )
     {
         var query = "SELECT * FROM Expenses WHERE UserId = @UserId";
         var parameters = new DynamicParameters();
         parameters.Add("UserId", userId);
 
-        if (!string.IsNullOrEmpty(category))
+        if (categoryId.HasValue)
         {
-            query += " AND Category = @Category";
-            parameters.Add("Category", category);
+            query += " AND CategoryId = @CategoryId";
+            parameters.Add("CategoryId", categoryId);
         }
 
         if (startDate.HasValue)
@@ -39,17 +39,18 @@ public class ExpenseRepository(IDbConnection dbConnection) : IExpenseRepository
         return expenses.ToList();
     }
 
+
     public async Task AddAsync(Expense expense)
     {
-        var query = "INSERT INTO Expenses (Id, UserId, Amount, Description, Category, Date, CreatedAt) " +
-                    "VALUES (@Id, @UserId, @Amount, @Description, @Category, @Date, @CreatedAt)";
+        var query = "INSERT INTO Expenses (Id, UserId, Amount, Description, CategoryId, Date, CreatedAt) " +
+                    "VALUES (@Id, @UserId, @Amount, @Description, @CategoryId, @Date, @CreatedAt)";
         await _dbConnection.ExecuteAsync(query, expense);
     }
 
     public async Task UpdateAsync(Expense expense)
     {
         var query = "UPDATE Expenses " + 
-                    "SET Amount = @Amount, Description = @Description, Category = @Category, Date = @Date " +
+                    "SET Amount = @Amount, Description = @Description, CategoryId = @CategoryId, Date = @Date " +
                     "WHERE Id = @Id AND UserId = @UserId";
         await _dbConnection.ExecuteAsync(query, expense);
     }
