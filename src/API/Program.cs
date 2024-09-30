@@ -10,6 +10,9 @@ using ExpenseTrackerGrupo4.src.Aplication.Interfaces;
 using ExpenseTrackerGrupo4.src.Aplication.Services;
 using ExpenseTrackerGrupo4.src.Aplication.Commands;
 using ExpenseTrackerGrupo4.src.Infrastructure.Services;
+using FluentValidation.AspNetCore;
+using FluentValidation;
+using ExpenseTrackerGrupo4.src.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +31,7 @@ builder.Services.AddScoped<IBudgetService, BudgetService>();
 builder.Services.AddScoped<IBudgetRepository, BudgetRepository>();
 builder.Services.AddScoped<IGoalService, GoalService>();
 builder.Services.AddScoped<IGoalRepository, GoalRepository>();
+// builder.Services.AddScoped<IValidator, ExpenseValidator>();
 
 builder.Services.AddScoped<IIncomeRepository, IncomeRepository>();
 builder.Services.AddScoped<IIncomeService, IncomeService>();
@@ -38,6 +42,15 @@ builder.Services.AddTransient<IDbConnection>(sp =>
     new NpgsqlConnection("Host=localhost;Port=5432;Database=mydatabase;Username=root;Password=group4321"));
     
 builder.Services.AddScoped<BaseContext>();
+
+builder.Services.AddFluentValidationAutoValidation(); 
+builder.Services.AddValidatorsFromAssemblyContaining<BudgetValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<BudgetWithExpensesValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<ExpenseValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<GoalValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<GoalWithDetailsValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<IncomeValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UserValidator>();
 
 var app = builder.Build();
 
