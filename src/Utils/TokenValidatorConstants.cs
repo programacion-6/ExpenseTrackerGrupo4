@@ -7,6 +7,6 @@ public class TokenValidatorConstants
         ?? throw new InvalidOperationException("The environment variable TOKEN_SECRET_KEY is not set.");
     public static readonly string _resetPasswordSecretKey  = 
         Environment.GetEnvironmentVariable("RESET_PASSWORD_SECRET") 
-        ?? throw new InvalidOperationException("The environment variable TOKEN_SECRET_KEY is not set.");
+        ?? throw new InvalidOperationException("The environment variable RESET_PASSWORD_SECRET is not set.");
     
 }

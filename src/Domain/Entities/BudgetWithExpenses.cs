@@ -8,7 +8,7 @@ public class BudgetWithExpenses
     public Guid? ExpenseId { get; set; }
     public decimal? Amount { get; set; }
     public string? Description { get; set; }
-    public string? Category { get; set; }
+    public Guid? CategoryId { get; set; }
     public DateTime? Date { get; set; }
     public DateTime? CreatedAt { get; set; }
 }

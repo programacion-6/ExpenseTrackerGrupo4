@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using ExpenseTrackerGrupo4.src.Domain.Entities;
 using ExpenseTrackerGrupo4.src.Infrastructure.Interfaces;
 using ExpenseTrackerGrupo4.src.Application.DTOs;
 using AutoMapper;
+using ExpenseTrackerGrupo4.src.Utils;
 
 namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
 {
@@ -30,14 +30,15 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return BadRequest("Income data is required.");
             }
 
-            var userId = GetUserId();
-            if (userId == Guid.Empty)
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+
+            if (currentUser == Guid.Empty)
             {
                 return Unauthorized("User ID is not valid or missing.");
             }
 
             var income = _mapper.Map<Income>(incomeDto);
-            income.UserId = userId;
+            income.UserId = currentUser;
 
             await _incomeService.AddAsync(income);
             return CreatedAtAction(nameof(GetIncomeById), new { id = income.Id }, incomeDto);
@@ -46,13 +47,13 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<IncomeResponseDto>>> GetIncomes()
         {
-            var userId = GetUserId();
-            if (userId == Guid.Empty)
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+            if (currentUser == Guid.Empty)
             {
                 return Unauthorized("User ID is not valid or missing.");
             }
 
-            var incomes = await _incomeService.GetIncomesByUserId(userId);
+            var incomes = await _incomeService.GetIncomesByUserId(currentUser);
             if (incomes == null || !incomes.Any())
             {
                 return Ok(new List<IncomeResponseDto>());
@@ -66,19 +67,20 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<IncomeResponseDto>> GetIncomeById(Guid id)
         {
-            var userId = GetUserId();
-            var income = await _incomeService.GetByIdAsync(id, userId);
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+            var income = await _incomeService.GetByIdAsync(id, currentUser);
             if (income == null)
             {
                 return NotFound();
             }
 
-            if (userId == Guid.Empty)
+            if (currentUser == Guid.Empty)
             {
                 return Unauthorized("User ID is not valid or missing.");
             }
 
-            if (income.UserId != userId)
+    
+            if (income.UserId != currentUser)
             {
                 return Forbid();
             }
@@ -96,14 +98,15 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return BadRequest("Income data is invalid.");
             }
             
-            var userId = GetUserId();
-            var existingIncome = await _incomeService.GetByIdAsync(id, userId);
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+
+            var existingIncome = await _incomeService.GetByIdAsync(id, currentUser);
             if (existingIncome == null)
             {
                 return NotFound();
             }
-
-            if (existingIncome.UserId != userId)
+            
+            if (existingIncome.UserId != currentUser)
             {
                 return Forbid();
             }
@@ -112,33 +115,28 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
             existingIncome.Source = updatedIncomeDto.Source;
             existingIncome.Date = updatedIncomeDto.Date;
 
-            await _incomeService.UpdateAsync(existingIncome, userId);
+            await _incomeService.UpdateAsync(existingIncome, currentUser);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteIncome(Guid id)
         {
-            var userId = GetUserId();
-            var income = await _incomeService.GetByIdAsync(id, userId);
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+            
+            var income = await _incomeService.GetByIdAsync(id, currentUser);
             if (income == null)
             {
                 return NotFound();
             }
 
-            if (income.UserId != userId)
+            if (income.UserId != currentUser)
             {
                 return Forbid();
             }
 
-            await _incomeService.DeleteAsync(id, userId);
+            await _incomeService.DeleteAsync(id, currentUser);
             return NoContent();
-        }
-
-        private Guid GetUserId()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
         }
     }
 }
