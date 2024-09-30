@@ -8,17 +8,17 @@ public class GetUserExpensesCommand(
     Guid userId, 
     DateTime? startDate, 
     DateTime? endDate, 
-    string? category
+    Guid? categoryId
 ) : ICommand<Task<List<Expense>>>
 {
     private readonly IExpenseRepository _expenseRepository = expenseRepository;
     private readonly Guid _userId = userId;
     private readonly DateTime? _startDate = startDate;
     private readonly DateTime? _endDate = endDate;
-    private readonly string? _category = category;
+    private readonly Guid? _categoryId = categoryId;
 
     public async Task<List<Expense>> Execute()
     {
-        return await _expenseRepository.GetUserExpensesAsync(_userId, _startDate, _endDate, _category);
+        return await _expenseRepository.GetUserExpensesAsync(_userId, _startDate, _endDate, _categoryId);
     }
 }

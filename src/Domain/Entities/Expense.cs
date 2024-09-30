@@ -8,7 +8,7 @@ public class Expense : IEntity
     public required Guid UserId { get; set; }
     public required decimal Amount { get; set; }
     public required string Description { get; set; }
-    public required string Category { get; set; }
+    public required Guid CategoryId { get; set; }
     public required DateTime Date { get; set; }
     public required DateTime CreatedAt { get; init; } = DateTime.Now;
 }
