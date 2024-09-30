@@ -12,12 +12,10 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
     public class IncomeController : ControllerBase
     {
         private readonly IIncomeService _incomeService;
-        private readonly Guid _currentUser;
 
         public IncomeController(IIncomeService incomeService)
         {
             _incomeService = incomeService;
-            _currentUser = UserIdClaimer.GetCurrentUserId(User);
         }
 
         [HttpPost]
@@ -28,12 +26,14 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return BadRequest("Income data is required.");
             }
 
-            if (_currentUser == Guid.Empty)
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+
+            if (currentUser == Guid.Empty)
             {
                 return Unauthorized("User ID is not valid or missing.");
             }
 
-            income.UserId = _currentUser;
+            income.UserId = currentUser;
 
             await _incomeService.AddIncomeAsync(income);
             return CreatedAtAction(nameof(GetIncomeById), new { id = income.Id }, income);
@@ -42,12 +42,13 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Income>>> GetIncomes()
         {
-            if (_currentUser == Guid.Empty)
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+            if (currentUser == Guid.Empty)
             {
                 return Unauthorized("User ID is not valid or missing.");
             }
 
-            var incomes = await _incomeService.GetIncomesByUserIdAsync(_currentUser);
+            var incomes = await _incomeService.GetIncomesByUserIdAsync(currentUser);
             
             if (incomes == null || !incomes.Any())
             {
@@ -66,7 +67,9 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return NotFound();
             }
 
-            if (income.UserId != _currentUser)
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+    
+            if (income.UserId != currentUser)
             {
                 return Forbid();
             }
@@ -88,7 +91,9 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return NotFound();
             }
 
-            if (existingIncome.UserId != _currentUser)
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+            
+            if (existingIncome.UserId != currentUser)
             {
                 return Forbid();
             }
@@ -106,7 +111,9 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return NotFound();
             }
 
-            if (income.UserId != _currentUser)
+            var currentUser = UserIdClaimer.GetCurrentUserId(User);
+            
+            if (income.UserId != currentUser)
             {
                 return Forbid();
             }

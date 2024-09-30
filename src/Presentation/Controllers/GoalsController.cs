@@ -15,22 +15,21 @@ public class GoalController : ControllerBase
 {
     private readonly IGoalService _goalService;
     private readonly IMapper _mapper;
-    private readonly Guid _currentUser;
 
     public GoalController(IGoalService goalService, IMapper mapper)
     {
         _goalService = goalService;
         _mapper = mapper;
-        _currentUser = UserIdClaimer.GetCurrentUserId(User);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateGoal([FromBody] CreateUpdateGoalDto dto)
     {
-        if (_currentUser == Guid.Empty) return Forbid();
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        if (currentUser == Guid.Empty) return Forbid();
 
         var goal = _mapper.Map<Goal>(dto);
-        goal.UserId = _currentUser;
+        goal.UserId = currentUser;
 
         await _goalService.AddAsync(goal);
         return CreatedAtAction(nameof(GetUserGoals), new { id = goal.Id }, dto);
@@ -39,9 +38,10 @@ public class GoalController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetUserGoals()
     {
-        if (_currentUser == Guid.Empty) return Forbid();
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        if (currentUser == Guid.Empty) return Forbid();
 
-        var goalsWithDetails = await _goalService.GetGoalsWithDetailsAsync(_currentUser);
+        var goalsWithDetails = await _goalService.GetGoalsWithDetailsAsync(currentUser);
 
         return Ok(goalsWithDetails);
     }
@@ -49,7 +49,8 @@ public class GoalController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateGoal(Guid id, [FromBody] CreateUpdateGoalDto dto)
     {
-        var existingGoal = await _goalService.GetByIdAsync(id, _currentUser);
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        var existingGoal = await _goalService.GetByIdAsync(id, currentUser);
 
         if (existingGoal == null) return NotFound();
 
@@ -57,18 +58,19 @@ public class GoalController : ControllerBase
         existingGoal.Deadline = dto.Deadline;
         existingGoal.CurrentAmount = dto.CurrentAmount;
 
-        await _goalService.UpdateAsync(existingGoal, _currentUser);
+        await _goalService.UpdateAsync(existingGoal, currentUser);
         return Ok(existingGoal);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteGoal(Guid id)
     {
-        var existingGoal = await _goalService.GetByIdAsync(id, _currentUser);
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        var existingGoal = await _goalService.GetByIdAsync(id, currentUser);
 
         if (existingGoal == null) return NotFound();
 
-        await _goalService.DeleteAsync(id, _currentUser);
+        await _goalService.DeleteAsync(id, currentUser);
         return NoContent();
     }
 }

@@ -15,22 +15,22 @@ public class CategoryController : ControllerBase
 {
     private readonly ICategoryService _categoryService;
     private readonly IMapper _mapper;
-    private readonly Guid _currentUser;
 
     public CategoryController(ICategoryService categoryService, IMapper mapper)
     {
         _categoryService = categoryService;
         _mapper = mapper;
-        _currentUser = UserIdClaimer.GetCurrentUserId(User);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDTO categoryDTO)
     {
-        if (_currentUser == Guid.Empty) return Forbid();
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+
+        if (currentUser == Guid.Empty) return Forbid();
 
         var category = _mapper.Map<Category>(categoryDTO);
-        category.UserId = _currentUser;
+        category.UserId = currentUser;
 
         await _categoryService.AddAsync(category);
 
@@ -40,55 +40,58 @@ public class CategoryController : ControllerBase
     [HttpDelete]
     public async Task<IActionResult> DeleteCategory(Guid categoryId)
     {
-        if (_currentUser == Guid.Empty) return Forbid();
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        
+        if (currentUser == Guid.Empty) return Forbid();
 
-        var category = await _categoryService.GetByIdAsync(categoryId, _currentUser);
+        var category = await _categoryService.GetByIdAsync(categoryId, currentUser);
 
         if(category == null) return NotFound();	
 
-        await _categoryService.DeleteAsync(categoryId, _currentUser);
-        return Ok();
+        await _categoryService.DeleteAsync(categoryId, currentUser);
+        return NoContent();
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCategoryById(Guid id)
     {
-        var category = await _categoryService.GetByIdAsync(id, _currentUser);
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        var category = await _categoryService.GetByIdAsync(id, currentUser);
         if(category == null) return NotFound();
 
         return Ok(category);
     }
 
-    [HttpGet]
+    [HttpGet("user")]
     public async Task<IActionResult> GetUserCategories()
     {
-        if (_currentUser == Guid.Empty) return Forbid();
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        if (currentUser == Guid.Empty) return Forbid();
 
-        var categories = await _categoryService.GetUserCategories(_currentUser);
+        var categories = await _categoryService.GetUserCategories(currentUser);
         return Ok(categories);
     }
 
-    [HttpGet]
+    [HttpGet("default")]
     public async Task<IActionResult> GetDefaultCategories()
     {
-        if (_currentUser == Guid.Empty) return Forbid();
-
-        var defaultCategories = await _categoryService.GetUserCategories(_currentUser);
+        var defaultCategories = await _categoryService.GetDefaultCategories();
         return Ok(defaultCategories);
     }
 
     [HttpPost("{id}")]
     public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] UpdateCategoryDTO updateCategoryDTO)
     {
-        if (_currentUser == Guid.Empty) return Forbid();
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        if (currentUser == Guid.Empty) return Forbid();
 
-        var category = await _categoryService.GetByIdAsync(id, _currentUser);
+        var category = await _categoryService.GetByIdAsync(id, currentUser);
 
         if(category == null) return NotFound();
 
         category.Name = updateCategoryDTO.Name;
 
-        await _categoryService.UpdateAsync(category, _currentUser);
+        await _categoryService.UpdateAsync(category, currentUser);
         return Ok();
     }
 }

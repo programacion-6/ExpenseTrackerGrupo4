@@ -15,22 +15,21 @@ public class ExpenseController : ControllerBase
 {
     private readonly IExpenseService _expenseService;
     private readonly IMapper _mapper;
-    private readonly Guid _currentUser;
 
     public ExpenseController(IExpenseService expenseService, IMapper mapper)
     {
         _expenseService = expenseService;
         _mapper = mapper;
-        _currentUser = UserIdClaimer.GetCurrentUserId(User);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateExpense([FromBody] CreateUpdateExpenseDto dto)
     {
-        if (_currentUser == Guid.Empty) return Forbid();
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        if (currentUser == Guid.Empty) return Forbid();
 
         var expense = _mapper.Map<Expense>(dto);
-        expense.UserId = _currentUser;
+        expense.UserId = currentUser;
 
         await _expenseService.AddAsync(expense);
         return CreatedAtAction(nameof(GetExpenseById), new { id = expense.Id }, dto);
@@ -41,9 +40,10 @@ public class ExpenseController : ControllerBase
         [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string? category
     )
     {
-        if (_currentUser == Guid.Empty) return Forbid();
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        if (currentUser == Guid.Empty) return Forbid();
 
-        var expenses = await _expenseService.GetUserExpensesCommand(_currentUser, startDate, endDate, category);
+        var expenses = await _expenseService.GetUserExpensesCommand(currentUser, startDate, endDate, category);
 
         return Ok(expenses);
     }
@@ -51,7 +51,8 @@ public class ExpenseController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetExpenseById(Guid id)
     {
-        var expense = await _expenseService.GetByIdAsync(id, _currentUser);
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        var expense = await _expenseService.GetByIdAsync(id, currentUser);
         if (expense == null) return NotFound();
         return Ok(expense);
     }
@@ -59,7 +60,8 @@ public class ExpenseController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateExpense(Guid id, [FromBody] CreateUpdateExpenseDto dto)
     {
-        var existingExpense = await _expenseService.GetByIdAsync(id, _currentUser);
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        var existingExpense = await _expenseService.GetByIdAsync(id, currentUser);
 
         if (existingExpense == null) return NotFound();
 
@@ -68,18 +70,19 @@ public class ExpenseController : ControllerBase
         existingExpense.Category = dto.Category ?? existingExpense.Category;
         existingExpense.Date = dto.Date ?? existingExpense.Date;
 
-        await _expenseService.UpdateAsync(existingExpense, _currentUser);
+        await _expenseService.UpdateAsync(existingExpense, currentUser);
         return Ok(existingExpense);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteExpense(Guid id)
     {
-        var existingExpense = await _expenseService.GetByIdAsync(id, _currentUser);
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        var existingExpense = await _expenseService.GetByIdAsync(id, currentUser);
 
         if (existingExpense == null) return NotFound();
 
-        await _expenseService.DeleteAsync(id, _currentUser);
+        await _expenseService.DeleteAsync(id, currentUser);
         return Ok();
     }
 }

@@ -38,7 +38,7 @@ public class CategoryRepository(IDbConnection dbConnection) : ICategoryRepositor
     public async Task UpdateAsync(Category entity)
     {
         var sql = @"
-            UPDATE Category 
+            UPDATE Categories 
             SET Name = @Name
             WHERE Id = @Id AND UserId = @UserId";
         
@@ -47,7 +47,7 @@ public class CategoryRepository(IDbConnection dbConnection) : ICategoryRepositor
 
     public async Task<IEnumerable<Category>> GetUserCategories(Guid userId)
     {
-        var query = "SELECT * FROM Categories WHERE UserId = @UserId";
-        return await _dbConnection.QueryAsync<Category>(query);
+        var query = "SELECT * FROM Categories WHERE UserId = @UserId::uuid";
+        return await _dbConnection.QueryAsync<Category>(query, new { UserId = userId });
     }
 }

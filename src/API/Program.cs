@@ -38,7 +38,7 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddAutoMapper(typeof(ExpenseTrackerProfile));
 
 builder.Services.AddTransient<IDbConnection>(sp => 
-    new NpgsqlConnection("Host=localhost;Port=5432;Database=mydatabase;Username=root;Password=group4321"));
+    new NpgsqlConnection("Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=password"));
     
 builder.Services.AddScoped<BaseContext>();
 

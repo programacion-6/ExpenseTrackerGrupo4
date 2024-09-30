@@ -15,23 +15,21 @@ public class BudgetController : ControllerBase
 {
     private readonly IBudgetService _budgetService;
     private readonly IMapper _mapper;
-    private readonly Guid _currentUser;
 
     public BudgetController(IBudgetService budgetService, IMapper mapper)
     {
         _budgetService = budgetService;
         _mapper = mapper;
-        _currentUser = UserIdClaimer.GetCurrentUserId(User);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateBudget([FromBody] CreateUpdateBudgetDto dto)
     {
-
-        if (_currentUser == Guid.Empty) return Forbid();
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        if (currentUser == Guid.Empty) return Forbid();
 
         var budget = _mapper.Map<Budget>(dto);
-        budget.UserId = _currentUser;
+        budget.UserId = currentUser;
 
         await _budgetService.AddAsync(budget);
         return CreatedAtAction(nameof(GetUserBudgets), new { id = budget.Id }, dto);
@@ -40,9 +38,10 @@ public class BudgetController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetUserBudgets()
     {
-        if (_currentUser == Guid.Empty) return Forbid();
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        if (currentUser == Guid.Empty) return Forbid();
 
-        var budgetsWithExpenses = await _budgetService.GetBudgetsAsync(_currentUser);
+        var budgetsWithExpenses = await _budgetService.GetBudgetsAsync(currentUser);
 
         return Ok(budgetsWithExpenses);
     }
@@ -50,26 +49,27 @@ public class BudgetController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateBudget(Guid id, [FromBody] CreateUpdateBudgetDto dto)
     {
-        var userId = UserIdClaimer.GetCurrentUserId(User);
-        var existingBudget = await _budgetService.GetByIdAsync(id, _currentUser);
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        var existingBudget = await _budgetService.GetByIdAsync(id, currentUser);
 
         if (existingBudget == null) return NotFound();
 
         existingBudget.Month = dto.Month;
         existingBudget.BudgetAmount = dto.BudgetAmount;
 
-        await _budgetService.UpdateAsync(existingBudget, userId);
+        await _budgetService.UpdateAsync(existingBudget, currentUser);
         return Ok(existingBudget);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteBudget(Guid id)
     {
-        var existingBudget = await _budgetService.GetByIdAsync(id, _currentUser);
+        var currentUser = UserIdClaimer.GetCurrentUserId(User);
+        var existingBudget = await _budgetService.GetByIdAsync(id, currentUser);
 
         if (existingBudget == null) return NotFound();
 
-        await _budgetService.DeleteAsync(id, _currentUser);
+        await _budgetService.DeleteAsync(id, currentUser);
         return NoContent();
     }
 }
