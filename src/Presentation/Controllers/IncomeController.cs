@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using ExpenseTrackerGrupo4.src.Domain.Entities;
 using ExpenseTrackerGrupo4.src.Infrastructure.Interfaces;
+using ExpenseTrackerGrupo4.src.Application.DTOs;
 
 namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
 {
@@ -19,9 +20,9 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateIncome([FromBody] Income income)
+        public async Task<IActionResult> CreateIncome([FromBody] IncomeDto incomeDto)
         {
-            if (income == null)
+            if (incomeDto == null)
             {
                 return BadRequest("Income data is required.");
             }
@@ -32,14 +33,22 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return Unauthorized("User ID is not valid or missing.");
             }
 
-            income.UserId = userId;
+            var income = new Income
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Amount = incomeDto.Amount,
+                Source = incomeDto.Source,
+                Date = incomeDto.Date,
+                CreatedAt = DateTime.UtcNow
+            };
 
             await _incomeService.AddIncomeAsync(income);
-            return CreatedAtAction(nameof(GetIncomeById), new { id = income.Id }, income);
+            return CreatedAtAction(nameof(GetIncomeById), new { id = income.Id }, incomeDto);
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Income>>> GetIncomes()
+        public async Task<ActionResult<IEnumerable<IncomeResponseDto>>> GetIncomes()
         {
             var userId = GetUserId();
             if (userId == Guid.Empty)
@@ -48,18 +57,25 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
             }
 
             var incomes = await _incomeService.GetIncomesByUserIdAsync(userId);
-            
             if (incomes == null || !incomes.Any())
             {
-                return Ok(new List<Income>());
+                return Ok(new List<IncomeResponseDto>());
             }
 
-            return Ok(incomes);
+            var incomeDtos = incomes.Select(income => new IncomeResponseDto
+            {
+                UserId = income.UserId,
+                Amount = income.Amount,
+                Source = income.Source,
+                Date = income.Date,
+                CreatedAt = income.CreatedAt
+            });
+
+            return Ok(incomeDtos);
         }
 
-
         [HttpGet("{id}")]
-        public async Task<ActionResult<Income>> GetIncomeById(Guid id)
+        public async Task<ActionResult<IncomeResponseDto>> GetIncomeById(Guid id)
         {
             var income = await _incomeService.GetIncomeByIdAsync(id);
             if (income == null)
@@ -67,18 +83,33 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return NotFound();
             }
 
-            if (income.UserId != GetUserId())
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized("User ID is not valid or missing.");
+            }
+
+            if (income.UserId != userId)
             {
                 return Forbid();
             }
 
-            return Ok(income);
+            var incomeDto = new IncomeResponseDto
+            {
+                UserId = income.UserId,
+                Amount = income.Amount,
+                Source = income.Source,
+                Date = income.Date,
+                CreatedAt = income.CreatedAt
+            };
+
+            return Ok(incomeDto);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateIncome(Guid id, [FromBody] Income updatedIncome)
+        public async Task<IActionResult> UpdateIncome(Guid id, [FromBody] IncomeDto updatedIncomeDto)
         {
-            if (updatedIncome == null || updatedIncome.Id != id)
+            if (updatedIncomeDto == null)
             {
                 return BadRequest("Income data is invalid.");
             }
@@ -89,10 +120,21 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return NotFound();
             }
 
-            if (existingIncome.UserId != GetUserId())
+            var userId = GetUserId();
+            if (existingIncome.UserId != userId)
             {
                 return Forbid();
             }
+
+            var updatedIncome = new Income
+            {
+                Id = id,
+                UserId = existingIncome.UserId,
+                Amount = updatedIncomeDto.Amount,
+                Source = updatedIncomeDto.Source,
+                Date = updatedIncomeDto.Date,
+                CreatedAt = existingIncome.CreatedAt
+            };
 
             await _incomeService.UpdateIncomeAsync(updatedIncome);
             return NoContent();
@@ -107,7 +149,8 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return NotFound();
             }
 
-            if (income.UserId != GetUserId())
+            var userId = GetUserId();
+            if (income.UserId != userId)
             {
                 return Forbid();
             }
