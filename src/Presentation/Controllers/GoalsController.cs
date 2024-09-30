@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using ExpenseTrackerGrupo4.src.Aplication.Interfaces;
 using ExpenseTrackerGrupo4.src.Presentation.DTOs;
 using AutoMapper;
 using ExpenseTrackerGrupo4.src.Domain.Entities;
+using ExpenseTrackerGrupo4.src.Utils;
 
 namespace ExpenseTrackerGrupo4.src.Presentation.Controllers;
 
@@ -15,22 +15,22 @@ public class GoalController : ControllerBase
 {
     private readonly IGoalService _goalService;
     private readonly IMapper _mapper;
+    private readonly Guid _currentUser;
 
     public GoalController(IGoalService goalService, IMapper mapper)
     {
         _goalService = goalService;
         _mapper = mapper;
+        _currentUser = UserIdClaimer.GetCurrentUserId(User);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateGoal([FromBody] CreateUpdateGoalDto dto)
     {
-        var userId = GetCurrentUserId();
-
-        if (userId == Guid.Empty) return Forbid(); 
+        if (_currentUser == Guid.Empty) return Forbid();
 
         var goal = _mapper.Map<Goal>(dto);
-        goal.UserId = userId; 
+        goal.UserId = _currentUser;
 
         await _goalService.AddAsync(goal);
         return CreatedAtAction(nameof(GetUserGoals), new { id = goal.Id }, dto);
@@ -39,11 +39,9 @@ public class GoalController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetUserGoals()
     {
-        var userId = GetCurrentUserId();
+        if (_currentUser == Guid.Empty) return Forbid();
 
-        if (userId == Guid.Empty) return Forbid(); 
-
-        var goalsWithDetails = await _goalService.GetGoalsWithDetailsAsync(userId);
+        var goalsWithDetails = await _goalService.GetGoalsWithDetailsAsync(_currentUser);
 
         return Ok(goalsWithDetails);
     }
@@ -51,8 +49,7 @@ public class GoalController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateGoal(Guid id, [FromBody] CreateUpdateGoalDto dto)
     {
-        var userId = GetCurrentUserId();
-        var existingGoal = await _goalService.GetByIdAsync(id, userId);
+        var existingGoal = await _goalService.GetByIdAsync(id, _currentUser);
 
         if (existingGoal == null) return NotFound();
 
@@ -60,25 +57,18 @@ public class GoalController : ControllerBase
         existingGoal.Deadline = dto.Deadline;
         existingGoal.CurrentAmount = dto.CurrentAmount;
 
-        await _goalService.UpdateAsync(existingGoal, userId);
+        await _goalService.UpdateAsync(existingGoal, _currentUser);
         return Ok(existingGoal);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteGoal(Guid id)
     {
-        var userId = GetCurrentUserId();
-        var existingGoal = await _goalService.GetByIdAsync(id, userId);
+        var existingGoal = await _goalService.GetByIdAsync(id, _currentUser);
 
         if (existingGoal == null) return NotFound();
 
-        await _goalService.DeleteAsync(id, userId);
+        await _goalService.DeleteAsync(id, _currentUser);
         return NoContent();
-    }
-
-    private Guid GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        return userIdClaim != null ? Guid.Parse(userIdClaim.Value) : Guid.Empty;
     }
 }

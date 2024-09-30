@@ -1,30 +1,36 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using ExpenseTrackerGrupo4.src.Aplication.Interfaces;
 using ExpenseTrackerGrupo4.src.Presentation.DTOs;
 using AutoMapper;
 using ExpenseTrackerGrupo4.src.Domain.Entities;
+using ExpenseTrackerGrupo4.src.Utils;
 
 namespace ExpenseTrackerGrupo4.src.Presentation.Controllers;
 
 [ApiController]
 [Route("api/expenses")]
 [Authorize]
-public class ExpenseController(IExpenseService expenseService, IMapper mapper) : ControllerBase
+public class ExpenseController : ControllerBase
 {
-    private readonly IExpenseService _expenseService = expenseService;
-    private readonly IMapper _mapper = mapper;
+    private readonly IExpenseService _expenseService;
+    private readonly IMapper _mapper;
+    private readonly Guid _currentUser;
+
+    public ExpenseController(IExpenseService expenseService, IMapper mapper)
+    {
+        _expenseService = expenseService;
+        _mapper = mapper;
+        _currentUser = UserIdClaimer.GetCurrentUserId(User);
+    }
 
     [HttpPost]
     public async Task<IActionResult> CreateExpense([FromBody] CreateUpdateExpenseDto dto)
     {
-        var userId = GetCurrentUserId();
-
-        if(userId == Guid.Empty) return Forbid(); 
+        if (_currentUser == Guid.Empty) return Forbid();
 
         var expense = _mapper.Map<Expense>(dto);
-        expense.UserId = userId; 
+        expense.UserId = _currentUser;
 
         await _expenseService.AddAsync(expense);
         return CreatedAtAction(nameof(GetExpenseById), new { id = expense.Id }, dto);
@@ -35,11 +41,9 @@ public class ExpenseController(IExpenseService expenseService, IMapper mapper) :
         [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string? category
     )
     {
-        var userId = GetCurrentUserId();
+        if (_currentUser == Guid.Empty) return Forbid();
 
-        if(userId == Guid.Empty) return Forbid(); 
-
-        var expenses = await _expenseService.GetUserExpensesCommand(userId, startDate, endDate, category);
+        var expenses = await _expenseService.GetUserExpensesCommand(_currentUser, startDate, endDate, category);
 
         return Ok(expenses);
     }
@@ -47,8 +51,7 @@ public class ExpenseController(IExpenseService expenseService, IMapper mapper) :
     [HttpGet("{id}")]
     public async Task<IActionResult> GetExpenseById(Guid id)
     {
-        var userId = GetCurrentUserId();
-        var expense = await _expenseService.GetByIdAsync(id, userId);
+        var expense = await _expenseService.GetByIdAsync(id, _currentUser);
         if (expense == null) return NotFound();
         return Ok(expense);
     }
@@ -56,8 +59,7 @@ public class ExpenseController(IExpenseService expenseService, IMapper mapper) :
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateExpense(Guid id, [FromBody] CreateUpdateExpenseDto dto)
     {
-        var userId = GetCurrentUserId();
-        var existingExpense = await _expenseService.GetByIdAsync(id, userId);
+        var existingExpense = await _expenseService.GetByIdAsync(id, _currentUser);
 
         if (existingExpense == null) return NotFound();
 
@@ -66,27 +68,18 @@ public class ExpenseController(IExpenseService expenseService, IMapper mapper) :
         existingExpense.Category = dto.Category ?? existingExpense.Category;
         existingExpense.Date = dto.Date ?? existingExpense.Date;
 
-        await _expenseService.UpdateAsync(existingExpense, userId);
+        await _expenseService.UpdateAsync(existingExpense, _currentUser);
         return Ok(existingExpense);
-        
     }
-
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteExpense(Guid id)
     {
-        var userId = GetCurrentUserId();
-        var existingExpense = await _expenseService.GetByIdAsync(id, userId);
+        var existingExpense = await _expenseService.GetByIdAsync(id, _currentUser);
 
         if (existingExpense == null) return NotFound();
 
-        await _expenseService.DeleteAsync(id, userId);
-        return Ok(); 
-    }
-
-    private Guid GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        return userIdClaim != null ? Guid.Parse(userIdClaim.Value) : Guid.Empty;
+        await _expenseService.DeleteAsync(id, _currentUser);
+        return Ok();
     }
 }
