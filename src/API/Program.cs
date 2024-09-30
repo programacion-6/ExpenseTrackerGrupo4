@@ -47,6 +47,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestDTOValidator>()
 builder.Services.AddValidatorsFromAssemblyContaining<PasswordResetConfirmDTOValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<PasswordResetRequestDTOValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<IncomeDtoValidator>();
 
 builder.Services.AddScoped<CommandInvoker>();
 builder.Services.AddScoped<ITokenValidatorService, TokenValidatorService>();
