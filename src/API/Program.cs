@@ -32,6 +32,7 @@ builder.Services.AddScoped<ITokenValidatorService, TokenValidatorService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IExpenseRepository, ExpenseRepository>();
 builder.Services.AddScoped<IBudgetService, BudgetService>();
 builder.Services.AddScoped<IBudgetRepository, BudgetRepository>();
@@ -46,6 +47,7 @@ builder.Services.AddDistributedMemoryCache();
 
 
 builder.Services.AddAutoMapper(typeof(ExpenseTrackerProfile));
+builder.Services.AddAutoMapper(typeof(UserProfile));
 
 builder.Services.AddTransient<IDbConnection>(sp => 
     new NpgsqlConnection("Host=localhost;Port=5432;Database=mydatabase;Username=root;Password=group4321"));
