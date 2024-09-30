@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using ExpenseTrackerGrupo4.src.Domain.Entities;
 using ExpenseTrackerGrupo4.src.Aplication.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using ExpenseTrackerGrupo4.src.Utils;
 using ExpenseTrackerGrupo4.src.Presentation.DTOs;
 using AutoMapper;
 

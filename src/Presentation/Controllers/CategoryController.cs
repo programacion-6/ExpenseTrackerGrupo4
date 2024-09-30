@@ -79,7 +79,7 @@ public class CategoryController : ControllerBase
         return Ok(defaultCategories);
     }
 
-    [HttpPost("{id}")]
+    [HttpPut("{id}")]
     public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] UpdateCategoryDTO updateCategoryDTO)
     {
         var currentUser = UserIdClaimer.GetCurrentUserId(User);
