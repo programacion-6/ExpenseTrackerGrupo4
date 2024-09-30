@@ -45,7 +45,7 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 CreatedAt = DateTime.UtcNow
             };
 
-            await _incomeService.AddIncomeAsync(income);
+            await _incomeService.AddAsync(income);
             return CreatedAtAction(nameof(GetIncomeById), new { id = income.Id }, incomeDto);
         }
 
@@ -58,7 +58,7 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return Unauthorized("User ID is not valid or missing.");
             }
 
-            var incomes = await _incomeService.GetIncomesByUserIdAsync(userId);
+            var incomes = await _incomeService.GetIncomesByUserId(userId);
             if (incomes == null || !incomes.Any())
             {
                 return Ok(new List<IncomeResponseDto>());
@@ -72,13 +72,13 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<IncomeResponseDto>> GetIncomeById(Guid id)
         {
-            var income = await _incomeService.GetIncomeByIdAsync(id);
+            var userId = GetUserId();
+            var income = await _incomeService.GetByIdAsync(id, userId);
             if (income == null)
             {
                 return NotFound();
             }
 
-            var userId = GetUserId();
             if (userId == Guid.Empty)
             {
                 return Unauthorized("User ID is not valid or missing.");
@@ -101,14 +101,14 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
             {
                 return BadRequest("Income data is invalid.");
             }
-
-            var existingIncome = await _incomeService.GetIncomeByIdAsync(id);
+            
+            var userId = GetUserId();
+            var existingIncome = await _incomeService.GetByIdAsync(id, userId);
             if (existingIncome == null)
             {
                 return NotFound();
             }
 
-            var userId = GetUserId();
             if (existingIncome.UserId != userId)
             {
                 return Forbid();
@@ -121,26 +121,26 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 Date = updatedIncomeDto.Date
             };
 
-            await _incomeService.UpdateIncomeAsync(updatedIncome);
+            await _incomeService.UpdateAsync(updatedIncome, userId);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteIncome(Guid id)
         {
-            var income = await _incomeService.GetIncomeByIdAsync(id);
+            var userId = GetUserId();
+            var income = await _incomeService.GetByIdAsync(id, userId);
             if (income == null)
             {
                 return NotFound();
             }
 
-            var userId = GetUserId();
             if (income.UserId != userId)
             {
                 return Forbid();
             }
 
-            await _incomeService.DeleteIncomeAsync(id);
+            await _incomeService.DeleteAsync(id, userId);
             return NoContent();
         }
 

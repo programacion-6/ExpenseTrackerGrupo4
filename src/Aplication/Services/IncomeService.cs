@@ -1,40 +1,45 @@
+using ExpenseTrackerGrupo4.src.Aplication.Commands;
+using ExpenseTrackerGrupo4.src.Aplication.Commands.Incomes;
 using ExpenseTrackerGrupo4.src.Domain.Entities;
 using ExpenseTrackerGrupo4.src.Infrastructure.Interfaces;
 
-namespace ExpenseTrackerGrupo4.src.Infrastructure.Services
+namespace ExpenseTrackerGrupo4.src.Aplication.Services
 {
-    public class IncomeService : IIncomeService
+    public class IncomeService(
+        IIncomeRepository incomeRepository, 
+        CommandInvoker commandInvoker
+    ) : BaseService(commandInvoker), IIncomeService
     {
-        private readonly IIncomeRepository _incomeRepository;
+        private readonly IIncomeRepository _incomeRepository = incomeRepository;
 
-        public IncomeService(IIncomeRepository incomeRepository)
+        public async Task AddAsync(Income income)
         {
-            _incomeRepository = incomeRepository;
+            var command = new AddIncomeCommand(_incomeRepository, income);
+            await CommandInvoker.Execute(command);
         }
 
-        public async Task AddIncomeAsync(Income income)
+        public async Task DeleteAsync(Guid id, Guid userId)
         {
-            await _incomeRepository.AddAsync(income);
+            var command = new DeleteIncomeCommand(_incomeRepository, id, userId);
+            await CommandInvoker.Execute(command);
         }
 
-        public async Task<Income?> GetIncomeByIdAsync(Guid id)
+        public async Task<Income?> GetByIdAsync(Guid id, Guid userId)
         {
-            return await _incomeRepository.GetByIdAsync(id);
+            var command = new GetIncomeByIdCommand(_incomeRepository, id, userId);
+            return await CommandInvoker.Execute(command);
         }
 
-        public async Task UpdateIncomeAsync(Income income)
+        public async Task<IEnumerable<Income>> GetIncomesByUserId(Guid userId)
         {
-            await _incomeRepository.UpdateAsync(income);
+            var command = new GetIncomeByUserCommand(_incomeRepository, userId);
+            return await CommandInvoker.Execute(command);
         }
 
-        public async Task DeleteIncomeAsync(Guid id)
+        public async Task UpdateAsync(Income income, Guid userId)
         {
-            await _incomeRepository.DeleteAsync(id);
-        }
-
-        public Task<IEnumerable<Income>> GetIncomesByUserIdAsync(Guid userId)
-        {
-            return _incomeRepository.GetIncomesByUser(userId);
+            var command = new UpdateIncomeCommand(_incomeRepository, income, userId);
+            await CommandInvoker.Execute(command);
         }
     }
 }
