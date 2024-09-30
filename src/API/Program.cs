@@ -46,6 +46,7 @@ builder.Services.AddDistributedMemoryCache();
 
 
 builder.Services.AddAutoMapper(typeof(ExpenseTrackerProfile));
+builder.Services.AddAutoMapper(typeof(IncomeProfile));
 
 builder.Services.AddTransient<IDbConnection>(sp => 
     new NpgsqlConnection("Host=localhost;Port=5432;Database=mydatabase;Username=root;Password=group4321"));

@@ -4,6 +4,7 @@ using System.Security.Claims;
 using ExpenseTrackerGrupo4.src.Domain.Entities;
 using ExpenseTrackerGrupo4.src.Infrastructure.Interfaces;
 using ExpenseTrackerGrupo4.src.Application.DTOs;
+using AutoMapper;
 
 namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
 {
@@ -13,10 +14,12 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
     public class IncomeController : ControllerBase
     {
         private readonly IIncomeService _incomeService;
+        private readonly IMapper _mapper;
 
-        public IncomeController(IIncomeService incomeService)
+        public IncomeController(IIncomeService incomeService, IMapper mapper)
         {
             _incomeService = incomeService;
+            _mapper = mapper;
         }
 
         [HttpPost]
@@ -33,13 +36,12 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return Unauthorized("User ID is not valid or missing.");
             }
 
-            var income = new Income
+            var income = _mapper.Map<Income>(incomeDto);
+
+            income = income with
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                Amount = incomeDto.Amount,
-                Source = incomeDto.Source,
-                Date = incomeDto.Date,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -62,14 +64,7 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return Ok(new List<IncomeResponseDto>());
             }
 
-            var incomeDtos = incomes.Select(income => new IncomeResponseDto
-            {
-                UserId = income.UserId,
-                Amount = income.Amount,
-                Source = income.Source,
-                Date = income.Date,
-                CreatedAt = income.CreatedAt
-            });
+            var incomeDtos = _mapper.Map<IEnumerable<IncomeResponseDto>>(incomes);
 
             return Ok(incomeDtos);
         }
@@ -94,14 +89,7 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return Forbid();
             }
 
-            var incomeDto = new IncomeResponseDto
-            {
-                UserId = income.UserId,
-                Amount = income.Amount,
-                Source = income.Source,
-                Date = income.Date,
-                CreatedAt = income.CreatedAt
-            };
+            var incomeDto = _mapper.Map<IncomeResponseDto>(income);
 
             return Ok(incomeDto);
         }
@@ -126,14 +114,11 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return Forbid();
             }
 
-            var updatedIncome = new Income
+            var updatedIncome = existingIncome with
             {
-                Id = id,
-                UserId = existingIncome.UserId,
                 Amount = updatedIncomeDto.Amount,
                 Source = updatedIncomeDto.Source,
-                Date = updatedIncomeDto.Date,
-                CreatedAt = existingIncome.CreatedAt
+                Date = updatedIncomeDto.Date
             };
 
             await _incomeService.UpdateIncomeAsync(updatedIncome);
