@@ -17,12 +17,38 @@ package Domain {
     }
 
     package Entities {
-        ENTITY User {
+        ENTITY Budget {
             + Id: Guid
-            + Name: String
-            + Email: String
-            + PasswordHash: String
+            + UserId: Guid
+            + Month: DateTime
+            + BudgetAmount: Decimal
+        }
+
+        ENTITY BudgetNotificationLog {
+            + UserId: Guid
+            + BudgetId: Guid
+            + Notified80: Bool
+            + Notified90: Bool
+            + Notified100: Bool
+        }
+
+        ENTITY BudgetWithExpenses {
+            + BudgetId: Guid
+            + UserId: Guid
+            + Month: DateTime
+            + BudgetAmount: Decimal
+            + ExpenseId: Guid
+            + Amount: Decimal
+            + Description: String
+            + Date: DateTime
             + CreatedAt: DateTime
+        }
+
+        ENTITY Category {
+            + Id: Guid
+            + UserId: Guid
+            + Name: String
+            + ParentId: Guid
         }
 
         ENTITY Expense {
@@ -30,9 +56,36 @@ package Domain {
             + UserId: Guid
             + Amount: Decimal
             + Description: String
-            + Category: String
+            + CategoryId: Guid
             + Date: DateTime
             + CreatedAt: DateTime
+        }
+
+        ENTITY Goal {
+            + Id: Guid
+            + UserId: Guid
+            + GoalAmount: Decimal
+            + Deadline: DateTime
+            + CurrentAmount: Decimal
+            + CreatedAt: DateTime
+        }
+
+        ENTITY GoalNotificationLog {
+            + Id: Guid
+            + UserId: Guid
+            + GoalId: Guid
+            + Notified50: Boolean
+            + Notified100: Boolean
+        }
+
+        ENTITY GoalWithDetails {
+            + GoalId: Guid
+            + GoalAmount: Decimal
+            + Deadline: DateTime
+            + CurrentAmount: Decimal
+            + CreatedAt: DateTime
+            + TotalIncome: Decimal
+            + TotalExpenses: Decimal
         }
 
         ENTITY Income {
@@ -44,18 +97,11 @@ package Domain {
             + CreatedAt: DateTime
         }
 
-        ENTITY Budget {
+        ENTITY User {
             + Id: Guid
-            + UserId: Guid
-            + Month: DateTime
-        }
-
-        ENTITY Goal {
-            + Id: Guid
-            + UserId: Guid
-            + GoalAmount: Decimal
-            + Deadline: DateTime
-            + CurrentAmount: Decimal
+            + Name: String
+            + Email: String
+            + PasswordHash: String
             + CreatedAt: DateTime
         }
     }
@@ -65,6 +111,7 @@ package Domain {
     Interfaces.IEntity <|.. Entities.Income
     Interfaces.IEntity <|.. Entities.Budget
     Interfaces.IEntity <|.. Entities.Goal
+    Interfaces.IEntity <|.. Entities.Category
 }
 
 package Application {
@@ -133,6 +180,13 @@ package Application {
         + TrackGoalProgress(Guid userId): decimal
         + GetCurrentUserGoals(Guid userId): List<Goal>
     }
+
+    SERVICE ICategoryService implements IService{
+        - ICategoryRepository categoryRepository
+
+        + GetUserCategories(Guid userId): IEnumerable<Category>
+        + GetDefaultCategories(): IEnumerable<Category>
+    }
 }
 
 package Infraestructure {
@@ -183,21 +237,39 @@ package Infraestructure {
     REPOSITORY IGoalRepository implements IRepository {
         + GetCurrentGoalsByUser(guid userId): List<Goal>
     }
+
+    REPOSITORY IBudgetNotificationLogRepository {
+        + GetByBudgetIdAsync(Guid budgetId, Guid userId): void
+        + InsertOrUpdateAsync(BudgetNotificationLog log): void
+    }
+
+    REPOSITORY ICategoryRepository {
+        + GetDefaultCategories(): void
+        + GetUserCategories(Guid userId): void
+    }
+
+    REPOSITORY IGoalNotificationLogRepository {
+        + GetByGoalIdAsync(Guid goalId, Guid userId): void
+        + InsertOrUpdateAsync(GoalNotificationLog log): void
+    }
 }
 
 package Presentation {
     CONTROLLER UserController{
         - IUserService userService
 
-        + UpdateProfile(User user): void
+        + GetUserById(Guid id): User
+        + UpdateUser(Guid userId, UserUpdateRequestDTO userUpdated): void'
+        + GetUserByEmail(string email): User
+        + DeleteUser(Guid id): void
         + ResetPassword(string email): void
     }
 
     CONTROLLER ExpenseController{
         - IExpenseService expenseService
 
-        + CreateExpense(Expense expense): void
-        + UpdateExpense(Expense expense): void
+        + CreateExpense(CreateUpdateExpenseDto dto): void
+        + UpdateExpense(CreateUpdateExpenseDto dto): void
         + DeleteExpense(Guid id): void
         + GetExpenses(): List<Expense>
         + GetExpenseById(Guid id): Expense
@@ -206,8 +278,8 @@ package Presentation {
     CONTROLLER IncomeController{
         - IIncomeService incomeService
 
-        + CreateIncome(Income income): void
-        + UpdateIncome(Income income): void
+        + CreateIncome(IncomeDto incomeDto): void
+        + UpdateIncome(IncomeDto updatedIncomeDto): void
         + DeleteIncome(Guid id): void
         + GetIncomes(): List<Income>
         + GetIncomeById(Guid id): Income
@@ -216,16 +288,16 @@ package Presentation {
     CONTROLLER BudgetController{
         - IBudgetService budgetService 
 
-        + CreateBudget(Budget budget): void
-        + UpdateBudget(Budget budget): void
+        + CreateBudget(CreateUpdateBudgetDto dto): void
+        + UpdateBudget(CreateUpdateBudgetDto dto): void
         + GetMonthlyBudget(): Budget
     }
 
     CONTROLLER GoalController{
         - IGoalService goalService
 
-        + CreateGoal(Goal goal): void
-        + UpdateGoal(Goal goal): void
+        + CreateGoal(CreateUpdateGoalDto dto): void
+        + UpdateGoal(CreateUpdateGoalDto dto): void
         + DeleteGoal(Guid id): void
         + GetCurrentGoals(): List<Goal>
     }
@@ -234,8 +306,27 @@ package Presentation {
         - IAuthenticationService authenticationService
         - ITokenValidatorService tokenValidatorService
         
-        + Register(User user): void
-        + Login(string email, string password): string
+        + Register(RegisterRequestDTO request): void
+        + Login(LoginRequestDTO request): string
+    }
+
+    CONTROLLER CategoryController{
+        - ICategoryService _categoryService
+
+        + CreateCategory(CreateCategoryDTO categoryDTO): void
+        + DeleteCategory(Guid categoryId): void
+        + GetCategoryById(Guid id): Category
+        + GetUserCategories() : IEnumerable<Category>
+        + GetDefaultCategories() : IEnumerable<Category>
+        + UpdateCategory(Guid id, UpdateCategoryDTO updateCategoryDTO)
+    }
+
+    CONTROLLER PasswordResetController{
+        - IUserRepository _userRepository
+        - EmailService _emailService
+
+        + RequestPasswordReset(PasswordResetRequestDto request) : void
+        + ConfirmPasswordReset(PasswordResetConfirmDto confirmRequest) : void
     }
 
     UserController o-- IUserService
@@ -250,6 +341,20 @@ package Presentation {
 package Utils {
     class EmailSender {
         + SendEmail(string email, string subject, string body): void
+    }
+
+    class PasswordHasher {
+        + HashPassword(string password): string
+        + VerifyPassword(string hashedPassword, string providedPassword) : bool
+    }
+
+    class TokenValidatorConstants {
+        - String _secretKey
+        - String _resetPasswordSecretKey
+    }
+
+    class UserIdClaimer {
+         + GetCurrentUserId(ClaimsPrincipal user) : Guid
     }
 }
 
@@ -267,5 +372,125 @@ IBudgetRepository *-- Budget
 IGoalRepository *-- Goal
 
 UserService --> EmailSender
+GoalController --> UserIdClaimer
+UserController --> UserIdClaimer
+BudgetController --> UserIdClaimer
+CategoryController --> UserIdClaimer
+ExpenseController --> UserIdClaimer
+PasswordResetController --> TokenValidatorConstants
+
+package DTOs {
+    class CreateCategoryDTO
+    {
+        - string Name
+        - Guid? ParentId
+    }
+
+    class CreateUpdateBudgetDto
+    {
+        - DateTime Month
+        - decimal BudgetAmount
+    }
+
+    class CreateUpdateExpenseDto
+    {
+        - decimal? Amount 
+        - string? Description 
+        - Guid? CategoryId 
+        - DateTime? Date 
+    }
+
+    class CreateUpdateGoalDto
+    {
+        - decimal GoalAmount
+        - DateTime Deadline
+        - decimal CurrentAmount
+    }
+
+    class GoalWithDetailsDto
+    {
+        - Guid GoalId
+        - decimal GoalAmount
+        - DateTime Deadline
+        - decimal CurrentAmount
+        - DateTime CreatedAt
+        - decimal TotalIncome
+        - decimal TotalExpenses
+    }
+
+    class IncomeDto
+    {
+        - decimal Amount 
+        - required string Source 
+        - DateTime Date 
+    }
+
+    class IncomeResponseDto
+    {
+        - Guid UserId
+        - decimal Amount
+        - string Source
+        - DateTime Date
+        - DateTime CreatedAt
+    }
+
+    class LoginRequestDTO
+    {
+        - string Email
+        - string Password
+    }
+
+    class PasswordResetConfirmDto
+    {
+        - string Email
+        - string Token
+        - string NewPassword
+    }
+
+    class PasswordResetRequestDto
+    {
+        - string Email
+    }
+
+    class RegisterRequestDTO
+    {
+        - string Name
+        - string Email
+        - string Password
+    }
+
+    class UpdateCategoryDTO
+    {
+        - string Name
+    }
+
+    class UserUpdateRequestDTO
+    {
+        - string Name
+        - string Email
+    }
+}
+
+CategoryController o-- UpdateCategoryDTO
+AuthController o-- RegisterRequestDTO
+AuthController o-- LoginRequestDTO
+BudgetController o-- CreateUpdateBudgetDto
+ExpenseController o-- CreateUpdateExpenseDto
+GoalController o-- CreateUpdateGoalDto
+IncomeController o-- IncomeDto
+IncomeController o-- IncomeResponseDto
+PasswordResetController o-- PasswordResetConfirmDto
+PasswordResetController o-- PasswordResetConfirmDto
+UserController o-- UserUpdateRequestDTO
+
+package Command {
+    interface ICommand<T> {
+        + T Execute();
+    }
+
+    class CommandInvoker{
+        + T Execute<T>(ICommand<T> command)
+    }
+}
 
 @enduml
