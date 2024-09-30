@@ -37,13 +37,7 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
             }
 
             var income = _mapper.Map<Income>(incomeDto);
-
-            income = income with
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId,
-                CreatedAt = DateTime.UtcNow
-            };
+            income.UserId = userId;
 
             await _incomeService.AddAsync(income);
             return CreatedAtAction(nameof(GetIncomeById), new { id = income.Id }, incomeDto);
@@ -114,14 +108,11 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers
                 return Forbid();
             }
 
-            var updatedIncome = existingIncome with
-            {
-                Amount = updatedIncomeDto.Amount,
-                Source = updatedIncomeDto.Source,
-                Date = updatedIncomeDto.Date
-            };
+            existingIncome.Amount = updatedIncomeDto.Amount;
+            existingIncome.Source = updatedIncomeDto.Source;
+            existingIncome.Date = updatedIncomeDto.Date;
 
-            await _incomeService.UpdateAsync(updatedIncome, userId);
+            await _incomeService.UpdateAsync(existingIncome, userId);
             return NoContent();
         }
 
