@@ -11,8 +11,8 @@ public class CategoryRepository(IDbConnection dbConnection) : ICategoryRepositor
     public async Task AddAsync(Category entity)
     {
         var query = @"
-                    INSERT INTO Categories (Id, UserId, Name, ParentId)
-                    VALUES (@Id, @UserId, @Name, @ParentId)";
+                    INSERT INTO Categories (Id, UserId, Name, ParentId, IsGlobal)
+                    VALUES (@Id, @UserId, @Name, @ParentId, FALSE)";
                     
         await _dbConnection.ExecuteAsync(query, entity);
     }
@@ -31,7 +31,7 @@ public class CategoryRepository(IDbConnection dbConnection) : ICategoryRepositor
 
     public async Task<IEnumerable<Category>> GetDefaultCategories()
     {
-        var query = "SELECT * FROM GlobalCategories";
+        var query = "SELECT * FROM Categories WHERE IsGlobal = TRUE";
         return await _dbConnection.QueryAsync<Category>(query);
     }
 

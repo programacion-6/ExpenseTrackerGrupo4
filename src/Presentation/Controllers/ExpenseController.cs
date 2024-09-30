@@ -14,11 +14,13 @@ namespace ExpenseTrackerGrupo4.src.Presentation.Controllers;
 public class ExpenseController : ControllerBase
 {
     private readonly IExpenseService _expenseService;
+    private readonly ICategoryService _categoryService;
     private readonly IMapper _mapper;
 
-    public ExpenseController(IExpenseService expenseService, IMapper mapper)
+    public ExpenseController(IExpenseService expenseService, ICategoryService categoryService, IMapper mapper)
     {
         _expenseService = expenseService;
+        _categoryService = categoryService;
         _mapper = mapper;
     }
 
@@ -27,6 +29,13 @@ public class ExpenseController : ControllerBase
     {
         var currentUser = UserIdClaimer.GetCurrentUserId(User);
         if (currentUser == Guid.Empty) return Forbid();
+
+        if(dto.CategoryId != null)
+        {
+            var category = await _categoryService.GetByIdAsync((Guid)dto.CategoryId, currentUser);
+            
+            if(category == null) return NotFound();
+        }
 
         var expense = _mapper.Map<Expense>(dto);
         expense.UserId = currentUser;
@@ -37,13 +46,13 @@ public class ExpenseController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetUserExpenses(
-        [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string? category
+        [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] Guid? categoryId
     )
     {
         var currentUser = UserIdClaimer.GetCurrentUserId(User);
         if (currentUser == Guid.Empty) return Forbid();
 
-        var expenses = await _expenseService.GetUserExpensesCommand(currentUser, startDate, endDate, category);
+        var expenses = await _expenseService.GetUserExpensesCommand(currentUser, startDate, endDate, categoryId);
 
         return Ok(expenses);
     }
@@ -67,7 +76,7 @@ public class ExpenseController : ControllerBase
 
         existingExpense.Amount = dto.Amount ?? existingExpense.Amount;
         existingExpense.Description = dto.Description ?? existingExpense.Description;
-        existingExpense.Category = dto.Category ?? existingExpense.Category;
+        existingExpense.CategoryId = dto.CategoryId ?? existingExpense.CategoryId;
         existingExpense.Date = dto.Date ?? existingExpense.Date;
 
         await _expenseService.UpdateAsync(existingExpense, currentUser);
